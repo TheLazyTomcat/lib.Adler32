@@ -106,7 +106,7 @@ type
 
 Function Adler32ToStr(Adler32: TAdler32): String;
 begin
-Result := Format('%.8x',[Adler32]);
+Result := IntToHex(Adler32,8);
 end;
 
 //------------------------------------------------------------------------------
