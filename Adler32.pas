@@ -9,9 +9,9 @@
 
   Adler32 calculation
 
-  ©František Milt 2018-05-08
+  ©František Milt 2018-10-21
 
-  Version 1.0
+  Version 1.1
 
   Dependencies:
     AuxTypes - github.com/ncs-sniper/Lib.AuxTypes
@@ -52,6 +52,7 @@ Function Adler32ToStr(Adler32: TAdler32): String;{$IFDEF CanInline} inline; {$EN
 Function StrToAdler32(const Str: String): TAdler32;
 Function TryStrToAdler32(const Str: String; out Adler32: TAdler32): Boolean;
 Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
+Function CompareAdler32(A,B: TAdler32): Integer;
 Function SameAdler32(A,B: TAdler32): Boolean;{$IFDEF CanInline} inline; {$ENDIF}
 
 Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32; overload;
@@ -141,6 +142,18 @@ Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
 begin
 If not TryStrToAdler32(Str,Result) then
   Result := Default;
+end;
+
+//------------------------------------------------------------------------------
+
+Function CompareAdler32(A,B: TAdler32): Integer;
+begin
+If A > B then
+  Result := -1
+else If B > A then
+  Result := 1
+else
+  REsult := 0;
 end;
 
 //------------------------------------------------------------------------------
