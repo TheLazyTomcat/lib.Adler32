@@ -9,9 +9,9 @@
 
   Adler32 calculation
 
-  Version 1.1
+  Version 1.1 (2018-10-22)
 
-  Last changed 2019-08-15
+  Last change 2019-08-19
 
   ©2018-2019 František Milt
 
@@ -24,9 +24,14 @@
 
       https://www.paypal.me/FMilt
 
+  Changelog:
+    For detailed changelog and history please refer to this git repository:
+
+      github.com/TheLazyTomcat/Lib.Adler32
+
   Dependencies:
     AuxTypes - github.com/TheLazyTomcat/Lib.AuxTypes
-    StrRect  - github.com/TheLazyTomcat/Lib.StrRect
+    StrRect  - github.com/TheLazyTomcat/Lib.StrRect        
 
 ===============================================================================}
 unit Adler32;
