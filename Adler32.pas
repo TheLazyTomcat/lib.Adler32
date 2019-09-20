@@ -9,9 +9,9 @@
 
   Adler32 calculation
 
-  Version 1.1 (2018-10-22)
+  Version 1.1.1 (2019-09-20)
 
-  Last change 2019-08-19
+  Last change 2019-09-20
 
   ©2018-2019 František Milt
 
@@ -55,11 +55,16 @@ unit Adler32;
 interface
 
 uses
-  Classes, AuxTypes;
+  SysUtils, Classes, AuxTypes;
 
 type
   TAdler32 = UInt32;
   PAdler32 = ^TAdler32;
+
+type
+  EADLER32Exception = class(Exception);
+
+  EADLER32NoStream = class(EADLER32Exception);
 
 const
   InitialAdler32 = TAdler32($00000001);
@@ -96,7 +101,7 @@ Function Adler32_Hash(const Buffer; Size: TMemSize): TAdler32;
 implementation
 
 uses
-  SysUtils, StrRect;
+  StrRect;
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
@@ -290,7 +295,7 @@ If Assigned(Stream) then
       FreeMem(Buffer,BufferSize);
     end;
   end
-else raise Exception.Create('StreamAdler32: Stream is not assigned.');
+else raise EADLER32NoStream.Create('StreamAdler32: Stream is not assigned.');
 end;
 
 //------------------------------------------------------------------------------
