@@ -169,12 +169,12 @@ end;
 
 Function CompareAdler32(A,B: TAdler32): Integer;
 begin
-If A > B then
+If A < B then
   Result := -1
-else If B > A then
+else If A > B then
   Result := 1
 else
-  REsult := 0;
+  Result := 0;
 end;
 
 //------------------------------------------------------------------------------
