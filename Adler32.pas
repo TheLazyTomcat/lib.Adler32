@@ -132,6 +132,8 @@ Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
 Function CompareAdler32(A,B: TAdler32): Integer;
 Function SameAdler32(A,B: TAdler32): Boolean;
 
+//------------------------------------------------------------------------------
+
 Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32; overload;
 
 Function BufferAdler32(const Buffer; Size: TMemSize): TAdler32; overload;
@@ -442,7 +444,12 @@ end;
 end;
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
 
-//==============================================================================
+{===============================================================================
+    Backward compatibility functions
+===============================================================================}
+{-------------------------------------------------------------------------------
+    Backward compatibility functions - utility functions
+-------------------------------------------------------------------------------}
 
 Function Adler32ToStr(Adler32: TAdler32): String;
 var
@@ -542,9 +549,9 @@ finally
 end;
 end;
 
-{===============================================================================
-    Backward compatibility functions
-===============================================================================}
+{-------------------------------------------------------------------------------
+    Backward compatibility functions - processing functions
+-------------------------------------------------------------------------------}
 
 Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32;
 var
@@ -649,7 +656,9 @@ finally
 end;
 end;
 
-//==============================================================================
+{-------------------------------------------------------------------------------
+    Backward compatibility functions - context functions
+-------------------------------------------------------------------------------}
 
 Function Adler32_Init: TAdler32Context;
 var
