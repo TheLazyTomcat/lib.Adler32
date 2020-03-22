@@ -9,11 +9,11 @@
 
   Adler32 calculation
 
-  Version 1.1.1 (2019-09-20)
+  Version 1.2 (2020-03-22)
 
-  Last change 2019-09-20
+  Last change 2020-03-22
 
-  ©2018-2019 František Milt
+  ©2018-2020 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -30,59 +30,115 @@
       github.com/TheLazyTomcat/Lib.Adler32
 
   Dependencies:
-    AuxTypes - github.com/TheLazyTomcat/Lib.AuxTypes
-    StrRect  - github.com/TheLazyTomcat/Lib.StrRect        
+    AuxTypes           - github.com/TheLazyTomcat/Lib.AuxTypes
+    HashBase           - github.com/TheLazyTomcat/Lib.HashBase
+    AuxClasses         - github.com/TheLazyTomcat/Lib.AuxClasses
+    StrRect            - github.com/TheLazyTomcat/Lib.StrRect
+    StaticMemoryStream - github.com/TheLazyTomcat/Lib.StaticMemoryStream
 
 ===============================================================================}
 unit Adler32;
 
 {$IFDEF FPC}
   {$MODE ObjFPC}{$H+}
-  {$INLINE ON}
-  {$DEFINE CanInline}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
-{$ELSE}
-  {$IF CompilerVersion >= 17 then}  // Delphi 2005+
-    {$DEFINE CanInline}
-  {$ELSE}
-    {$UNDEF CanInline}
-  {$IFEND}
 {$ENDIF}
-
-{$DEFINE LargeBuffer}
 
 interface
 
 uses
-  SysUtils, Classes, AuxTypes;
+  Classes,
+  AuxTypes, HashBase;
 
+{===============================================================================
+    Common types and constants
+===============================================================================}
+
+{
+  Note that type TAdler32 contains individual bytes of the checksum in the same
+  order as they are presented in its textual representation. That means most
+  significant byte first (left), least significant byte last (righ).
+
+  Type TAdler32Sys has no such guarantee and its endianness is system-dependent.
+
+  To convert the checksum in default ordering to a required specific ordering,
+  use methods Adler32ToLE for little endian and Adler32ToBE for big endian.
+  Note that these methods are expecting the input value to be in default
+  ordering, if it is not, the result will be wrong. Be carefull when using them.
+}
 type
-  TAdler32 = UInt32;
+  TAdler32 = array[0..3] of UInt8;
   PAdler32 = ^TAdler32;
 
-type
-  EADLER32Exception = class(Exception);
-
-  EADLER32NoStream = class(EADLER32Exception);
+  TAdler32Sys = UInt32;
+  PAdler32Sys = ^TAdler32Sys;
 
 const
-  InitialAdler32 = TAdler32($00000001);
+  InitialAdler32: TAdler32 = ($00,$00,$00,$01);
 
-Function Adler32ToStr(Adler32: TAdler32): String;{$IFDEF CanInline} inline; {$ENDIF}
+type
+  EADLER32Exception = class(EHashException);
+
+  EADLER32IncompatibleClass = class(EADLER32Exception);
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                  TAdler32Hash
+================================================================================
+-------------------------------------------------------------------------------}
+{===============================================================================
+    TAdler32Hash - class declaration
+===============================================================================}
+type
+  TAdler32Hash = class(TStreamHash)
+  private
+    fAdler32: TAdler32Sys;
+    Function GetAdler32: TAdler32;
+  protected
+    procedure ProcessBuffer(const Buffer; Size: TMemSize); override;
+    procedure Initialize; override;
+  public
+    class Function Adler32ToSys(Adler32: TAdler32): TAdler32Sys; virtual;
+    class Function Adler32FromSys(Adler32: TAdler32Sys): TAdler32; virtual;
+    class Function Adler32ToLE(Adler32: TAdler32): TAdler32; virtual;
+    class Function Adler32ToBE(Adler32: TAdler32): TAdler32; virtual;
+    class Function Adler32FromLE(Adler32: TAdler32): TAdler32; virtual;
+    class Function Adler32FromBE(Adler32: TAdler32): TAdler32; virtual;
+    class Function HashSize: TMemSize; override;
+    class Function HashName: String; override;
+    class Function HashEndianness: THashEndianness; override;
+    constructor CreateAndInitFrom(Hash: THashBase); overload; override;
+    constructor CreateAndInitFrom(Hash: TAdler32); overload; virtual;
+    procedure Init; override;
+    Function Compare(Hash: THashBase): Integer; override;
+    Function AsString: String; override;
+    procedure FromString(const Str: String); override;
+    procedure FromStringDef(const Str: String; const Default: TAdler32); reintroduce;
+    procedure SaveToStream(Stream: TStream; Endianness: THashEndianness = heDefault); override;
+    procedure LoadFromStream(Stream: TStream; Endianness: THashEndianness = heDefault); override;
+    property Adler32: TAdler32 read GetAdler32;
+    property Adler32Sys: TAdler32Sys read fAdler32;
+  end;
+
+{===============================================================================
+    Backward compatibility functions
+===============================================================================}
+
+Function Adler32ToStr(Adler32: TAdler32): String;
 Function StrToAdler32(const Str: String): TAdler32;
 Function TryStrToAdler32(const Str: String; out Adler32: TAdler32): Boolean;
 Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
 Function CompareAdler32(A,B: TAdler32): Integer;
-Function SameAdler32(A,B: TAdler32): Boolean;{$IFDEF CanInline} inline; {$ENDIF}
+Function SameAdler32(A,B: TAdler32): Boolean;
 
 Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32; overload;
 
 Function BufferAdler32(const Buffer; Size: TMemSize): TAdler32; overload;
 
-Function AnsiStringAdler32(const Str: AnsiString): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
-Function WideStringAdler32(const Str: WideString): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
-Function StringAdler32(const Str: String): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
+Function AnsiStringAdler32(const Str: AnsiString): TAdler32;
+Function WideStringAdler32(const Str: WideString): TAdler32;
+Function StringAdler32(const Str: String): TAdler32;
 
 Function StreamAdler32(Stream: TStream; Count: Int64 = -1): TAdler32;
 Function FileAdler32(const FileName: String): TAdler32;
@@ -101,92 +157,65 @@ Function Adler32_Hash(const Buffer; Size: TMemSize): TAdler32;
 implementation
 
 uses
-  StrRect;
+  SysUtils;
 
 {$IFDEF FPC_DisableWarns}
   {$DEFINE FPCDWM}
   {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W5057:={$WARN 5057 OFF}} // Local variable "$1" does not seem to be initialized
 {$ENDIF}
+
+{-------------------------------------------------------------------------------
+================================================================================
+                                  TAdler32Hash
+================================================================================
+-------------------------------------------------------------------------------}
+
+{===============================================================================
+    TAdler32Hash - utility functions
+===============================================================================}
+
+Function SwapEndian(Value: TAdler32Sys): TAdler32Sys; overload;
+begin
+Result := TAdler32Sys(
+  ((Value and $000000FF) shl 24) or
+  ((Value and $0000FF00) shl 8) or
+  ((Value and $00FF0000) shr 8) or
+  ((Value and $FF000000) shr 24));
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Function SwapEndian(Value: TAdler32): TAdler32; overload;
+begin
+Result := TAdler32(SwapEndian(TAdler32Sys(Value)));
+end;
+
+{===============================================================================
+    TAdler32Hash - calculation constants
+===============================================================================}
 
 const
-{$IFDEF LargeBuffer}
-  BufferSize = $100000; // 1MiB buffer
-{$ELSE}
-  BufferSize = 4096;    // 4KiB buffer
-{$ENDIF}
-
   Adler32Modulo   = 65521;
   Adler32NMRounds = 5552; // number of rounds that can be done without calculating modulo
 
-type
-  TAdler32Context_Internal = record
-    Adler32:  TAdler32;
-  end;
-  PAdler32Context_Internal = ^TAdler32Context_Internal;
+{===============================================================================
+    TAdler32Hash - class implementation
+===============================================================================}
+{-------------------------------------------------------------------------------
+    TAdler32Hash - private methods
+-------------------------------------------------------------------------------}
 
-//==============================================================================
-
-Function Adler32ToStr(Adler32: TAdler32): String;
+Function TAdler32Hash.GetAdler32: TAdler32;
 begin
-Result := IntToHex(Adler32,8);
+Result := Adler32FromSys(fAdler32);
 end;
 
-//------------------------------------------------------------------------------
+{-------------------------------------------------------------------------------
+    TAdler32Hash - protected methods
+-------------------------------------------------------------------------------}
 
-Function StrToAdler32(const Str: String): TAdler32;
-begin
-If Length(Str) > 0 then
-  begin
-    If Str[1] = '$' then
-      Result := TAdler32(StrToInt(Str))
-    else
-      Result := TAdler32(StrToInt('$' + Str));
-  end
-else Result := InitialAdler32;
-end;
-
-//------------------------------------------------------------------------------
-
-Function TryStrToAdler32(const Str: String; out Adler32: TAdler32): Boolean;
-begin
-try
-  Adler32 := StrToAdler32(Str);
-  Result := True;
-except
-  Result := False;
-end;
-end;
-
-//------------------------------------------------------------------------------
-
-Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
-begin
-If not TryStrToAdler32(Str,Result) then
-  Result := Default;
-end;
-
-//------------------------------------------------------------------------------
-
-Function CompareAdler32(A,B: TAdler32): Integer;
-begin
-If A < B then
-  Result := -1
-else If A > B then
-  Result := 1
-else
-  Result := 0;
-end;
-
-//------------------------------------------------------------------------------
-
-Function SameAdler32(A,B: TAdler32): Boolean;
-begin
-Result := UInt32(A) = UInt32(B);
-end;
-
-//==============================================================================
-
-Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32;
+procedure TAdler32Hash.ProcessBuffer(const Buffer; Size: TMemSize);
 var
   SumA: UInt32;
   SumB: UInt32;
@@ -195,8 +224,8 @@ var
 begin
 If Size > 0 then
   begin
-    SumA := Adler32 and $FFFF;
-    SumB := (Adler32 shr 16) and $FFFF;
+    SumA := fAdler32 and $FFFF;
+    SumB := (fAdler32 shr 16) and $FFFF;
     Buff := PByte(@Buffer);
     // rounds with deferred modulo
     while Size >= Adler32NMRounds do
@@ -227,104 +256,415 @@ If Size > 0 then
         SumB := SumB mod Adler32Modulo;
       end;
     // construct result
-    Result := (SumB shl 16) or (SumA and $FFFF);
+    fAdler32 := (SumB shl 16) or (SumA and $FFFF);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAdler32Hash.Initialize;
+begin
+inherited;
+fAdler32 := 0;
+end;
+
+{-------------------------------------------------------------------------------
+    TAdler32Hash - public methods
+-------------------------------------------------------------------------------}
+
+class Function TAdler32Hash.Adler32ToSys(Adler32: TAdler32): TAdler32Sys;
+begin
+Result := {$IFNDEF ENDIAN_BIG}SwapEndian{$ENDIF}(TAdler32Sys(Adler32));
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.Adler32FromSys(Adler32: TAdler32Sys): TAdler32;
+begin
+Result := TAdler32({$IFNDEF ENDIAN_BIG}SwapEndian{$ENDIF}(Adler32));
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.Adler32ToLE(Adler32: TAdler32): TAdler32;
+begin
+Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.Adler32ToBE(Adler32: TAdler32): TAdler32;
+begin
+Result := Adler32;
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.Adler32FromLE(Adler32: TAdler32): TAdler32;
+begin
+Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.Adler32FromBE(Adler32: TAdler32): TAdler32;
+begin
+Result := Adler32;
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.HashSize: TMemSize;
+begin
+Result := SizeOf(TAdler32);
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.HashName: String;
+begin
+Result := 'Adler32';
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.HashEndianness: THashEndianness;
+begin
+Result := heBig;
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TAdler32Hash.CreateAndInitFrom(Hash: THashBase);
+begin
+Create;
+Init;
+If Hash is TAdler32Hash then
+  fAdler32 := TAdler32Hash(Hash).Adler32Sys
+else
+  raise EADLER32IncompatibleClass.CreateFmt('TAdler32Hash.ProcessBuffer: Incompatible class (%s).',[Hash.ClassName]);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor TAdler32Hash.CreateAndInitFrom(Hash: TAdler32);
+begin
+Create;
+Init;
+fAdler32 := Adler32ToSys(Hash);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAdler32Hash.Init;
+begin
+fAdler32 := Adler32ToSys(InitialAdler32);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TAdler32Hash.Compare(Hash: THashBase): Integer;
+begin
+If Hash is TAdler32Hash then
+  begin
+    If fAdler32 > TAdler32Hash(Hash).Adler32Sys then
+      Result := +1
+    else If fAdler32 < TAdler32Hash(Hash).Adler32Sys then
+      Result := -1
+    else
+      Result := 0;
   end
-else Result := Adler32;
+else raise EADLER32IncompatibleClass.CreateFmt('TAdler32Hash.Compare: Incompatible class (%s).',[Hash.ClassName]);
+end;
+
+//------------------------------------------------------------------------------
+
+Function TAdler32Hash.AsString: String;
+begin
+Result := IntToHex(fAdler32,8);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAdler32Hash.FromString(const Str: String);
+begin
+If Length(Str) > 0 then
+  begin
+    If Str[1] = '$' then
+      fAdler32 := TAdler32Sys(StrToInt(Str))
+    else
+      fAdler32 := TAdler32Sys(StrToInt('$' + Str));
+  end
+else fAdler32 := Adler32ToSys(InitialAdler32);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAdler32Hash.FromStringDef(const Str: String; const Default: TAdler32);
+begin
+If not TryFromString(Str) then
+  fAdler32 := Adler32ToSys(Default);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TAdler32Hash.SaveToStream(Stream: TStream; Endianness: THashEndianness = heDefault);
+var
+  Temp: TAdler32;
+begin
+case Endianness of
+  heSystem: Temp := {$IFDEF ENDIAN_BIG}Adler32ToBE{$ELSE}Adler32ToLE{$ENDIF}(Adler32FromSys(fAdler32));
+  heLittle: Temp := Adler32ToLE(Adler32FromSys(fAdler32));
+  heBig:    Temp := Adler32ToBE(Adler32FromSys(fAdler32));
+else
+ {heDefault}
+  Temp := Adler32FromSys(fAdler32);
+end;
+Stream.WriteBuffer(Temp,SizeOf(TAdler32));
+end;
+
+//------------------------------------------------------------------------------
+
+{$IFDEF FPCDWM}{$PUSH}W5057{$ENDIF}
+procedure TAdler32Hash.LoadFromStream(Stream: TStream; Endianness: THashEndianness = heDefault);
+var
+  Temp: TAdler32;
+begin
+Stream.ReadBuffer(Temp,SizeOf(TAdler32));
+case Endianness of
+  heSystem: fAdler32 := Adler32ToSys({$IFDEF ENDIAN_BIG}Adler32FromBE{$ELSE}Adler32FromLE{$ENDIF}(Temp));
+  heLittle: fAdler32 := Adler32ToSys(Adler32FromLE(Temp));
+  heBig:    fAdler32 := Adler32ToSys(Adler32FromBE(Temp));
+else
+ {heDefault}
+  fAdler32 := Adler32ToSys(Temp);
+end;
+end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
+
+//==============================================================================
+
+Function Adler32ToStr(Adler32: TAdler32): String;
+var
+  Hash: TAdler32Hash;
+begin
+Hash := TAdler32Hash.CreateAndInitFrom(Adler32);
+try
+  Result := Hash.AsString;
+finally
+  Hash.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StrToAdler32(const Str: String): TAdler32;
+var
+  Hash: TAdler32Hash;
+begin
+Hash := TAdler32Hash.Create;
+try
+  Hash.FromString(Str);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function TryStrToAdler32(const Str: String; out Adler32: TAdler32): Boolean;
+var
+  Hash: TAdler32Hash;
+begin
+Hash := TAdler32Hash.Create;
+try
+  Result := Hash.TryFromString(Str);
+  If Result then
+    Adler32 := Hash.Adler32;
+finally
+  Hash.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function StrToAdler32Def(const Str: String; Default: TAdler32): TAdler32;
+var
+  Hash: TAdler32Hash;
+begin
+Hash := TAdler32Hash.Create;
+try
+  Hash.FromStringDef(Str,Default);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function CompareAdler32(A,B: TAdler32): Integer;
+var
+  HashA:  TAdler32Hash;
+  HashB:  TAdler32Hash;
+begin
+HashA := TAdler32Hash.CreateAndInitFrom(A);
+try
+  HashB := TAdler32Hash.CreateAndInitFrom(B);
+  try
+    Result := HashA.Compare(HashB);
+  finally
+    HashB.Free;
+  end;
+finally
+  HashA.Free;
+end;
+end;
+
+//------------------------------------------------------------------------------
+
+Function SameAdler32(A,B: TAdler32): Boolean;
+var
+  HashA:  TAdler32Hash;
+  HashB:  TAdler32Hash;
+begin
+HashA := TAdler32Hash.CreateAndInitFrom(A);
+try
+  HashB := TAdler32Hash.CreateAndInitFrom(B);
+  try
+    Result := HashA.Same(HashB);
+  finally
+    HashB.Free;
+  end;
+finally
+  HashA.Free;
+end;
+end;
+
+{===============================================================================
+    Backward compatibility functions
+===============================================================================}
+
+Function BufferAdler32(Adler32: TAdler32; const Buffer; Size: TMemSize): TAdler32;
+var
+  Hash: TAdler32Hash;
+begin
+Hash := TAdler32Hash.CreateAndInitFrom(Adler32);
+try
+  Hash.Final(Buffer,Size);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 Function BufferAdler32(const Buffer; Size: TMemSize): TAdler32;
+var
+  Hash: TAdler32Hash;
 begin
-Result := BufferAdler32(InitialAdler32,Buffer,Size);
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashBuffer(Buffer,Size);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function AnsiStringAdler32(const Str: AnsiString): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
+Function AnsiStringAdler32(const Str: AnsiString): TAdler32;
+var
+  Hash: TAdler32Hash;
 begin
-Result := BufferAdler32(PAnsiChar(Str)^,Length(Str) * SizeOf(AnsiChar));
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashAnsiString(Str);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function WideStringAdler32(const Str: WideString): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
+Function WideStringAdler32(const Str: WideString): TAdler32;
+var
+  Hash: TAdler32Hash;
 begin
-Result := BufferAdler32(PWideChar(Str)^,Length(Str) * SizeOf(WideChar));
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashWideString(Str);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
-Function StringAdler32(const Str: String): TAdler32;{$IFDEF CanInline} inline; {$ENDIF}
+Function StringAdler32(const Str: String): TAdler32;
+var
+  Hash: TAdler32Hash;
 begin
-Result := BufferAdler32(PChar(Str)^,Length(Str) * SizeOf(Char));
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashString(Str);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
 Function StreamAdler32(Stream: TStream; Count: Int64 = -1): TAdler32;
 var
-  Buffer:     Pointer;
-  BytesRead:  Integer;
-
-  Function Min(A,B: Int64): Int64;
-  begin
-    If A < B then Result := A
-      else Result := B;
-  end;
-
+  Hash: TAdler32Hash;
 begin
-If Assigned(Stream) then
-  begin
-    If Count = 0 then
-      Count := Stream.Size - Stream.Position;
-    If Count < 0 then
-      begin
-        Stream.Position := 0;
-        Count := Stream.Size;
-      end;
-    GetMem(Buffer,BufferSize);
-    try
-      Result := InitialAdler32;
-      repeat
-        BytesRead := Stream.Read(Buffer^,Min(BufferSize,Count));
-        Result := BufferAdler32(Result,Buffer^,BytesRead);
-        Dec(Count,BytesRead);
-      until BytesRead < BufferSize;
-    finally
-      FreeMem(Buffer,BufferSize);
-    end;
-  end
-else raise EADLER32NoStream.Create('StreamAdler32: Stream is not assigned.');
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashStream(Stream,Count);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 //------------------------------------------------------------------------------
 
 Function FileAdler32(const FileName: String): TAdler32;
 var
-  FileStream: TFileStream;
+  Hash: TAdler32Hash;
 begin
-FileStream := TFileStream.Create(StrToRTL(FileName), fmOpenRead or fmShareDenyWrite);
+Hash := TAdler32Hash.Create;
 try
-  Result := StreamAdler32(FileStream);
+  Hash.HashFile(FileName);
+  Result := Hash.Adler32;
 finally
-  FileStream.Free;
+  Hash.Free;
 end;
 end;
 
 //==============================================================================
 
 Function Adler32_Init: TAdler32Context;
+var
+  Temp: TAdler32Hash;
 begin
-Result := AllocMem(SizeOf(TAdler32Context_Internal));
-PAdler32Context_Internal(Result)^.Adler32 := InitialAdler32;
+Temp := TAdler32Hash.Create;
+Temp.Init;
+Result := TAdler32Context(Temp);
 end;
 
 //------------------------------------------------------------------------------
 
 procedure Adler32_Update(var Context: TAdler32Context; const Buffer; Size: TMemSize);
 begin
-PAdler32Context_Internal(Context)^.Adler32 := BufferAdler32(PAdler32Context_Internal(Context)^.Adler32,Buffer,Size);
+TAdler32Hash(Context).Update(Buffer,Size);
 end;
 
 //------------------------------------------------------------------------------
@@ -339,16 +679,24 @@ end;
 
 Function Adler32_Final(var Context: TAdler32Context): TAdler32;
 begin
-Result := PAdler32Context_Internal(Context)^.Adler32;
-FreeMem(Context,SizeOf(TAdler32Context_Internal));
-Context := nil;
+TAdler32Hash(Context).Final;
+Result := TAdler32Hash(Context).Adler32;
+FreeAndNil(TAdler32Hash(Context));
 end;
 
 //------------------------------------------------------------------------------
 
 Function Adler32_Hash(const Buffer; Size: TMemSize): TAdler32;
+var
+  Hash: TAdler32Hash;
 begin
-Result := BufferAdler32(Buffer,Size);
+Hash := TAdler32Hash.Create;
+try
+  Hash.HashBuffer(Buffer,Size);
+  Result := Hash.Adler32;
+finally
+  Hash.Free;
+end;
 end;
 
 end.
