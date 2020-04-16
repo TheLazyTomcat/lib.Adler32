@@ -358,6 +358,7 @@ end;
 
 procedure TAdler32Hash.Init;
 begin
+inherited;
 fAdler32 := Adler32ToSys(InitialAdler32);
 end;
 
@@ -402,6 +403,7 @@ end;
 
 procedure TAdler32Hash.FromStringDef(const Str: String; const Default: TAdler32);
 begin
+inherited FromStringDef(Str,Default);
 If not TryFromString(Str) then
   fAdler32 := Adler32ToSys(Default);
 end;
