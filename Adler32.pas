@@ -11,7 +11,7 @@
 
   Version 1.2 (2020-03-22)
 
-  Last change 2020-03-22
+  Last change 2020-04-17
 
   ©2018-2020 František Milt
 
@@ -339,20 +339,18 @@ end;
 
 constructor TAdler32Hash.CreateAndInitFrom(Hash: THashBase);
 begin
-Create;
-Init;
+CreateAndInit;
 If Hash is TAdler32Hash then
   fAdler32 := TAdler32Hash(Hash).Adler32Sys
 else
-  raise EADLER32IncompatibleClass.CreateFmt('TAdler32Hash.ProcessBuffer: Incompatible class (%s).',[Hash.ClassName]);
+  raise EADLER32IncompatibleClass.CreateFmt('TAdler32Hash.CreateAndInitFrom: Incompatible class (%s).',[Hash.ClassName]);
 end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 constructor TAdler32Hash.CreateAndInitFrom(Hash: TAdler32);
 begin
-Create;
-Init;
+CreateAndInit;
 fAdler32 := Adler32ToSys(Hash);
 end;
 
