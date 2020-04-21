@@ -9,9 +9,9 @@
 
   Adler32 calculation
 
-  Version 1.2 (2020-03-22)
+  Version 1.2.1 (2020-04-22)
 
-  Last change 2020-04-17
+  Last change 2020-04-22
 
   ©2018-2020 František Milt
 
@@ -339,7 +339,7 @@ end;
 
 constructor TAdler32Hash.CreateAndInitFrom(Hash: THashBase);
 begin
-CreateAndInit;
+inherited CreateAndInitFrom(Hash);
 If Hash is TAdler32Hash then
   fAdler32 := TAdler32Hash(Hash).Adler32Sys
 else
