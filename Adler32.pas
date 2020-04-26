@@ -9,9 +9,9 @@
 
   Adler32 calculation
 
-  Version 1.2.1 (2020-04-22)
+  Version 1.2.2 (2020-04-26)
 
-  Last change 2020-04-22
+  Last change 2020-04-26
 
   ©2018-2020 František Milt
 
@@ -54,11 +54,9 @@ uses
 {===============================================================================
     Common types and constants
 ===============================================================================}
-
 {
-  Note that type TAdler32 contains individual bytes of the checksum in the same
-  order as they are presented in its textual representation. That means most
-  significant byte first (left), least significant byte last (righ).
+  Bytes in TAdler32 are always ordered from least significant byte to most
+  significant byte (little endian).
 
   Type TAdler32Sys has no such guarantee and its endianness is system-dependent.
 
@@ -75,7 +73,7 @@ type
   PAdler32Sys = ^TAdler32Sys;
 
 const
-  InitialAdler32: TAdler32 = ($00,$00,$00,$01);
+  InitialAdler32: TAdler32 = ($01,$00,$00,$00);
 
 type
   EADLER32Exception = class(EHashException);
@@ -276,42 +274,42 @@ end;
 
 class Function TAdler32Hash.Adler32ToSys(Adler32: TAdler32): TAdler32Sys;
 begin
-Result := {$IFNDEF ENDIAN_BIG}SwapEndian{$ENDIF}(TAdler32Sys(Adler32));
+Result := {$IFDEF ENDIAN_BIG}SwapEndian{$ENDIF}(TAdler32Sys(Adler32));
 end;
 
 //------------------------------------------------------------------------------
 
 class Function TAdler32Hash.Adler32FromSys(Adler32: TAdler32Sys): TAdler32;
 begin
-Result := TAdler32({$IFNDEF ENDIAN_BIG}SwapEndian{$ENDIF}(Adler32));
+Result := TAdler32({$IFDEF ENDIAN_BIG}SwapEndian{$ENDIF}(Adler32));
 end;
 
 //------------------------------------------------------------------------------
 
 class Function TAdler32Hash.Adler32ToLE(Adler32: TAdler32): TAdler32;
 begin
-Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
+Result := Adler32;
 end;
 
 //------------------------------------------------------------------------------
 
 class Function TAdler32Hash.Adler32ToBE(Adler32: TAdler32): TAdler32;
 begin
-Result := Adler32;
+Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
 end;
 
 //------------------------------------------------------------------------------
 
 class Function TAdler32Hash.Adler32FromLE(Adler32: TAdler32): TAdler32;
 begin
-Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
+Result := Adler32;
 end;
 
 //------------------------------------------------------------------------------
 
 class Function TAdler32Hash.Adler32FromBE(Adler32: TAdler32): TAdler32;
 begin
-Result := Adler32;
+Result := TAdler32(SwapEndian(TAdler32Sys(Adler32)));
 end;
 
 //------------------------------------------------------------------------------
@@ -332,7 +330,7 @@ end;
 
 class Function TAdler32Hash.HashEndianness: THashEndianness;
 begin
-Result := heBig;
+Result := heLittle;
 end;
 
 //------------------------------------------------------------------------------
