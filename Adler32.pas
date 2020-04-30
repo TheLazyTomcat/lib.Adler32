@@ -11,7 +11,7 @@
 
   Version 1.2.2 (2020-04-26)
 
-  Last change 2020-04-26
+  Last change 2020-05-01
 
   ©2018-2020 František Milt
 
@@ -41,8 +41,16 @@ unit Adler32;
 
 {$IFDEF FPC}
   {$MODE ObjFPC}{$H+}
+  {$INLINE ON}
+  {$DEFINE CanInline}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
+{$ELSE}
+  {$IF CompilerVersion >= 17 then}  // Delphi 2005+
+    {$DEFINE CanInline}
+  {$ELSE}
+    {$UNDEF CanInline}
+  {$IFEND}
 {$ENDIF}
 
 interface
@@ -186,7 +194,7 @@ end;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-Function SwapEndian(Value: TAdler32): TAdler32; overload;
+Function SwapEndian(Value: TAdler32): TAdler32; overload;{$IFDEF CanInline} inline; {$ENDIF}
 begin
 Result := TAdler32(SwapEndian(TAdler32Sys(Value)));
 end;
