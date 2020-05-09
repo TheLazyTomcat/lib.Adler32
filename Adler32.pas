@@ -11,7 +11,7 @@
 
   Version 1.2.2 (2020-04-26)
 
-  Last change 2020-05-03
+  Last change 2020-05-09
 
   ©2018-2020 František Milt
 
@@ -74,7 +74,7 @@ uses
   ordering, if it is not, the result will be wrong. Be carefull when using them.
 }
 type
-  TAdler32 = array[0..3] of UInt8;
+  TAdler32 = packed array[0..3] of UInt8;
   PAdler32 = ^TAdler32;
 
   TAdler32Sys = UInt32;
