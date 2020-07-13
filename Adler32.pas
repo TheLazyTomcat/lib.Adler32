@@ -9,9 +9,9 @@
 
   Adler-32 calculation
 
-  Version 1.2.2 (2020-04-26)
+  Version 1.2.3 (2020-07-13)
 
-  Last change 2020-05-09
+  Last change 2020-07-13
 
   ©2018-2020 František Milt
 
@@ -83,8 +83,10 @@ type
 const
   InitialAdler32: TAdler32 = ($01,$00,$00,$00);
 
+  ZeroAdler32: TAdler32 = (0,0,0,0);
+
 type
-  EADLER32Exception = class(EHashException);
+  EADLER32Exception = class(EHASHException);
 
   EADLER32IncompatibleClass = class(EADLER32Exception);
 
@@ -114,6 +116,7 @@ type
     class Function HashSize: TMemSize; override;
     class Function HashName: String; override;
     class Function HashEndianness: THashEndianness; override;
+    class Function HashFinalization: Boolean; override;
     constructor CreateAndInitFrom(Hash: THashBase); overload; override;
     constructor CreateAndInitFrom(Hash: TAdler32); overload; virtual;
     procedure Init; override;
@@ -339,6 +342,13 @@ end;
 class Function TAdler32Hash.HashEndianness: THashEndianness;
 begin
 Result := heLittle;
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TAdler32Hash.HashFinalization: Boolean;
+begin
+Result := False;
 end;
 
 //------------------------------------------------------------------------------
