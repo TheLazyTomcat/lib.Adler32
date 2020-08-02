@@ -11,7 +11,7 @@
 
   Version 1.2.3 (2020-07-13)
 
-  Last change 2020-07-13
+  Last change 2020-08-02
 
   ©2018-2020 František Milt
 
@@ -40,7 +40,7 @@
 unit Adler32;
 
 {$IFDEF FPC}
-  {$MODE ObjFPC}{$H+}
+  {$MODE ObjFPC}
   {$INLINE ON}
   {$DEFINE CanInline}
   {$DEFINE FPC_DisableWarns}
@@ -52,6 +52,7 @@ unit Adler32;
     {$UNDEF CanInline}
   {$IFEND}
 {$ENDIF}
+{$H+}
 
 interface
 
