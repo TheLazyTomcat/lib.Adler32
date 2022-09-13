@@ -11,9 +11,9 @@
 
   Version 1.2.3 (2020-07-13)
 
-  Last change 2020-08-02
+  Last change 2020-09-13
 
-  ©2018-2020 František Milt
+  ©2018-2022 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -101,10 +101,9 @@ type
 ===============================================================================}
 type
   TAdler32Hash = class(TStreamHash)
-  private
-    fAdler32: TAdler32Sys;
-    Function GetAdler32: TAdler32;
   protected
+    fAdler32: TAdler32Sys;
+    Function GetAdler32: TAdler32; virtual;
     procedure ProcessBuffer(const Buffer; Size: TMemSize); override;
     procedure Initialize; override;
   public
@@ -215,7 +214,7 @@ const
     TAdler32Hash - class implementation
 ===============================================================================}
 {-------------------------------------------------------------------------------
-    TAdler32Hash - private methods
+    TAdler32Hash - protected methods
 -------------------------------------------------------------------------------}
 
 Function TAdler32Hash.GetAdler32: TAdler32;
@@ -223,9 +222,7 @@ begin
 Result := Adler32FromSys(fAdler32);
 end;
 
-{-------------------------------------------------------------------------------
-    TAdler32Hash - protected methods
--------------------------------------------------------------------------------}
+//------------------------------------------------------------------------------
 
 procedure TAdler32Hash.ProcessBuffer(const Buffer; Size: TMemSize);
 var
