@@ -34,8 +34,8 @@
     HashBase - github.com/TheLazyTomcat/Lib.HashBase
 
   Indirect dependencies:
-    AuxExceptions      - github.com/TheLazyTomcat/Lib.AuxExceptions
     AuxClasses         - github.com/TheLazyTomcat/Lib.AuxClasses
+    AuxExceptions      - github.com/TheLazyTomcat/Lib.AuxExceptions
     SimpleCPUID        - github.com/TheLazyTomcat/Lib.SimpleCPUID
     StaticMemoryStream - github.com/TheLazyTomcat/Lib.StaticMemoryStream
     StrRect            - github.com/TheLazyTomcat/Lib.StrRect
